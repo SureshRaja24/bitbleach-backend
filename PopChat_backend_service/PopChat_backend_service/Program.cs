@@ -8,7 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. SERVICES
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<JwtService>();
 
 // 2. JWT AUTHENTICATION SETUP
@@ -62,8 +63,11 @@ builder.Services.AddCors(options => {
 var app = builder.Build();
 
 // 4. MIDDLEWARE PIPELINE
-if (app.Environment.IsDevelopment()) { app.MapOpenApi(); }
-
+if (app.Environment.IsDevelopment() || true) // Keep true for now to see Swagger on Render
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 app.UseRouting();
 app.UseCors(); // Must be before Auth
 app.UseAuthentication();
