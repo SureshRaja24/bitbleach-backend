@@ -2,24 +2,27 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy everything first to ensure we see the folder structure
+# Copy everything from your repo into the container
 COPY . .
 
-# Find any .csproj file and restore dependencies
-# This command finds the project file even if it's in a subfolder
-RUN dotnet restore $(find . -name "*.csproj" | head -n 1)
+# Move into the folder where the solution/project lives
+# Based on your path: Backend/PopChat_backend_service
+WORKDIR "/src/Backend/PopChat_backend_service"
 
-# Build and publish the release
-RUN dotnet publish $(find . -name "*.csproj" | head -n 1) -c Release -o /app/publish
+# Restore using the .sln or .csproj found here
+RUN dotnet restore
+
+# Move deeper if needed or stay here to publish
+# If Program.cs is in the sub-subfolder:
+WORKDIR "/src/Backend/PopChat_backend_service/PopChat_backend_service"
+RUN dotnet publish -c Release -o /app/publish
 
 # Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Render environment setup
 ENV ASPNETCORE_URLS=http://0.0.0.0:10000
 EXPOSE 10000
 
-# Entrypoint - Replace 'PopChat_backend_service.dll' if your assembly name is different
 ENTRYPOINT ["dotnet", "PopChat_backend_service.dll"]
