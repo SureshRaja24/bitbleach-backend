@@ -1,25 +1,29 @@
-# Stage 1: Build using the .NET 10 SDK
+# Stage 1: Build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copy everything from the repo
+# 1. Copy everything (This brings in the 'Backend' folder)
 COPY . .
 
-# Find the .csproj anywhere in the Backend folder and restore
-# Using 'find' ensures we hit the nested folder correctly
-RUN dotnet restore $(find Backend -name "*.csproj")
+# 2. Move to the directory where the Solution/Project lives
+# Path: /src/Backend/PopChat_backend_service
+WORKDIR "/src/Backend/PopChat_backend_service"
 
-# Publish the project 
-RUN dotnet publish $(find Backend -name "*.csproj") -c Release -o /app/publish
+# 3. Restore using the .sln (found here)
+RUN dotnet restore
 
-# Stage 2: Runtime using .NET 10 ASP.NET image
+# 4. Publish the specific project
+# Path to .csproj from here: PopChat_backend_service/PopChat_backend_service.csproj
+RUN dotnet publish "PopChat_backend_service/PopChat_backend_service.csproj" -c Release -o /app/publish
+
+# Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Render Specifics
+# Render Config
 ENV ASPNETCORE_URLS=http://0.0.0.0:10000
 EXPOSE 10000
 
-# This must match your assembly name
+# Start the DLL
 ENTRYPOINT ["dotnet", "PopChat_backend_service.dll"]
