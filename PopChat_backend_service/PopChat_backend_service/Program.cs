@@ -10,7 +10,9 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<JwtService>();
+
+// Replace 'JwtService' with your actual service class name if different
+builder.Services.AddSingleton<JwtService>(); 
 
 // 2. JWT AUTHENTICATION SETUP
 builder.Services.AddAuthentication(options => {
@@ -21,13 +23,13 @@ builder.Services.AddAuthentication(options => {
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
-        // Ensure this string matches your JwtService exactly!
+        // Ensure this key matches your JwtService exactly
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("PopChat_Super_Secure_Secret_Key_2026_Suresh")),
         ValidateIssuer = false,
         ValidateAudience = false,
         ValidateLifetime = true,
         RequireExpirationTime = true,
-        ClockSkew = TimeSpan.FromMinutes(2) // 2-minute grace period for time sync
+        ClockSkew = TimeSpan.FromMinutes(2)
     };
 
     options.Events = new JwtBearerEvents
@@ -36,6 +38,7 @@ builder.Services.AddAuthentication(options => {
         {
             var accessToken = context.Request.Query["access_token"];
             var path = context.Request.Path;
+            // Matches the Hub path defined in Step 5
             if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/popchat"))
             {
                 context.Token = accessToken;
@@ -51,28 +54,33 @@ builder.Services.AddAuthentication(options => {
 });
 
 // 3. CORS POLICY
+builder.Services.AddCors(options => {
     options.AddPolicy("BitBleachPolicy", policy => {
-        policy.WithOrigins("https://bitbleach.web.app", "http://localhost:3000") // Added localhost
+        policy.WithOrigins("https://bitbleach.web.app", "http://localhost:3000", "http://localhost:5173") 
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials(); 
+              .AllowCredentials(); // Required for SignalR
     });
 });
 
 var app = builder.Build();
 
-// 4. MIDDLEWARE PIPELINE
-if (app.Environment.IsDevelopment() || true) // Keep true for now to see Swagger on Render
+// 4. MIDDLEWARE PIPELINE (Order is critical!)
+if (app.Environment.IsDevelopment() || true) // 'true' ensures Swagger works on Render
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 app.UseRouting();
-app.UseCors(); // Must be before Auth
+
+// Must be after UseRouting and before UseAuthentication
+app.UseCors("BitBleachPolicy"); 
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 5. HUB MAPPING
+// 5. ENDPOINT MAPPING
 app.MapHub<PopHub>("/hubs/popchat");
 app.MapControllers();
 
