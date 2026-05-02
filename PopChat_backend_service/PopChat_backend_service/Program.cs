@@ -53,7 +53,7 @@ builder.Services.AddAuthentication(options => {
 // 3. CORS POLICY
 builder.Services.AddCors(options => {
     options.AddPolicy("BitBleachPolicy", policy => {
-        policy.WithOrigins("https://bitbleach.web.app", "https://bitbleach.firebaseapp.com")
+        policy.WithOrigins("https://bitbleach.web.app", "http://localhost:3000")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); // CRITICAL for SignalR
