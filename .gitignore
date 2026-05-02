@@ -1,0 +1,10 @@
+# Ignore sensitive settings
+appsettings.json
+appsettings.Development.json
+*.usersecrets
+
+# Ignore build folders
+bin/
+obj/
+out/
+.vs/
